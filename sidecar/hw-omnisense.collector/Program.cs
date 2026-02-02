@@ -23,13 +23,10 @@ while (true)
 
         foreach (var sensor in hardware.Sensors)
         {
-            if (sensor.Value == null) continue;
-
-            string unit = sensor.SensorType == SensorType.Temperature ? "°C" : "%";
-            
-            if (sensor.SensorType == SensorType.Temperature || sensor.SensorType == SensorType.Load)
+            if (sensor.Value.HasValue)
             {
-                Console.WriteLine($"  [{sensor.SensorType}] {sensor.Name}: {sensor.Value:0.0}{unit}");
+                string unit = sensor.SensorType == SensorType.Temperature ? "°C" : (sensor.SensorType == SensorType.Load ? "%" : "");
+                Console.WriteLine($"  [{sensor.SensorType}] {sensor.Name}: {sensor.Value.Value:0.0}{unit}");
             }
         }
     }
