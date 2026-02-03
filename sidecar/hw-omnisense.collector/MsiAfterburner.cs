@@ -4,8 +4,8 @@ using System.Text;
 
 public class MsiMonitor : IDisposable
 {
-    private MemoryMappedFile _mmf;
-    private MemoryMappedViewAccessor _accessor;
+    private MemoryMappedFile? _mmf;
+    private MemoryMappedViewAccessor? _accessor;
     private const string MapName = "MAHMSharedMemory";
 
     
@@ -62,10 +62,26 @@ public class MsiMonitor : IDisposable
 
         if (_accessor == null) return result;
 
+        // Tenta ler o cabeçalho
         MAHM_SHARED_MEMORY_HEADER header;
         _accessor.Read(0, out header);
 
-        if (header.Signature != 0xDEADBEEF) return result;
+        Console.WriteLine($"[MSI DEBUG] Assinatura: {header.Signature:X} (Esperado: DEADBEEF)");
+        Console.WriteLine($"[MSI DEBUG] Versão: {header.Version} | Sensores: {header.EntryCount}");
+        Console.WriteLine($"[MSI DEBUG] Tamanho Header: {header.HeaderSize} | Tamanho Entrada: {header.EntrySize}");
+
+        if (header.Signature != 0xDEADBEEF) 
+        {
+            Console.WriteLine("[ERRO CRÍTICO] Assinatura de memória inválida! O Afterburner pode estar em outra versão ou travado.");
+            return result;
+        }
+
+        if (header.EntryCount == 0)
+        {
+            Console.WriteLine("[AVISO] MSI Afterburner conectado, mas reportando ZERO sensores.");
+            Console.WriteLine("DICA: Abra as configurações do Afterburner > Monitoramento e garanta que os gráficos estão ativos.");
+            return result;
+        }
 
         for (int i = 0; i < header.EntryCount; i++)
         {
