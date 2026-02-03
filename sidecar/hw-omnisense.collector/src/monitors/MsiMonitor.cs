@@ -1,6 +1,7 @@
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using System.Text;
+
+namespace HwOmniSense.Collector.Monitors;
 
 public class MsiMonitor : IDisposable
 {
@@ -9,7 +10,7 @@ public class MsiMonitor : IDisposable
     private const string MapName = "MAHMSharedMemory";
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct MAHM_SHARED_MEMORY_HEADER
+    private struct MAHM_SHARED_MEMORY_HEADER
     {
         public uint Signature;
         public uint Version;
@@ -22,18 +23,13 @@ public class MsiMonitor : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct MAHM_SHARED_MEMORY_ENTRY
+    private struct MAHM_SHARED_MEMORY_ENTRY
     {
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string SrcName; 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string SrcUnits;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string LocalizedSrcName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string LocalizedSrcUnits;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string RecommendedFormat;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string SrcName; 
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string SrcUnits;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string LocalizedSrcName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string LocalizedSrcUnits;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string RecommendedFormat;
         public float Data;
         public float MinLimit;
         public float MaxLimit;
@@ -64,14 +60,7 @@ public class MsiMonitor : IDisposable
         MAHM_SHARED_MEMORY_HEADER header;
         _accessor.Read(0, out header);
 
-        Console.WriteLine($"[MSI DEBUG] Assinatura: {header.Signature:X}");
-        
-        if (header.Signature != 0x4D41484D && header.Signature != 0xDEADBEEF)
-        {
-            Console.WriteLine("[ERRO] Assinatura inválida.");
-            return result;
-        }
-
+        if (header.Signature != 0x4D41484D && header.Signature != 0xDEADBEEF) return result;
         if (header.EntryCount == 0) return result;
 
         byte[] buffer = new byte[header.EntrySize];
@@ -79,17 +68,12 @@ public class MsiMonitor : IDisposable
         for (int i = 0; i < header.EntryCount; i++)
         {
             long offset = header.HeaderSize + (i * header.EntrySize);
-            
             _accessor.ReadArray(offset, buffer, 0, buffer.Length);
 
             MAHM_SHARED_MEMORY_ENTRY entry = BytesToStruct<MAHM_SHARED_MEMORY_ENTRY>(buffer);
-
             string cleanName = entry.SrcName.Trim('\0');
             
-            if (!string.IsNullOrEmpty(cleanName))
-            {
-                result[cleanName] = entry.Data;
-            }
+            if (!string.IsNullOrEmpty(cleanName)) result[cleanName] = entry.Data;
         }
 
         return result;
@@ -98,14 +82,8 @@ public class MsiMonitor : IDisposable
     private static T BytesToStruct<T>(byte[] data) where T : struct
     {
         GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-        try
-        {
-            return Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
-        }
-        finally
-        {
-            handle.Free();
-        }
+        try { return Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject()); }
+        finally { handle.Free(); }
     }
 
     public void Dispose()

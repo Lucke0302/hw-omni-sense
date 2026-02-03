@@ -1,8 +1,22 @@
 ﻿using System.Text.Json;
+using HwOmniSense.Collector.Monitors;
+using HwOmniSense.Collector.Models;
+using HwOmniSense.Collector.Services;
 
-Console.WriteLine("=== HW OmniSense | MSI Afterburner Client (Discovery Mode) ===");
+Console.WriteLine("=== HW OmniSense | Backend Collector v2.0 (Clean Architecture) ===");
 
-MsiMonitor msi = new MsiMonitor();
+using MsiMonitor msi = new MsiMonitor();
+DatabaseService db = new DatabaseService();
+
+try 
+{ 
+    db.Initialize(); 
+    Console.WriteLine("[INFO] Banco de Dados SQLite inicializado.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[ERRO] Falha no Banco: {ex.Message}");
+}
 bool msiConnected = false;
 
 try
@@ -13,8 +27,14 @@ try
 }
 catch
 {
-    Console.WriteLine("[AVISO] MSI Afterburner não encontrado. Certifique-se que ele está aberto.");
+    Console.WriteLine("[AVISO] MSI Afterburner não encontrado. Ativando Modo Simulação.");
 }
+
+// Variáveis de Simulação
+Random rng = new Random();
+float simTemp = 45.0f;
+
+int dbCounter = 0;
 
 while (true)
 {
@@ -26,56 +46,52 @@ while (true)
         {
             var dados = msi.ReadData();
 
+            // CPU
+            if (dados.ContainsKey("CPU temperature")) telemetry.CpuTemp = dados["CPU temperature"];
+            if (dados.ContainsKey("CPU usage")) telemetry.CpuLoad = dados["CPU usage"];
+            if (dados.ContainsKey("CPU power")) telemetry.CpuWatts = dados["CPU power"];
+            if (dados.ContainsKey("CPU clock")) telemetry.CpuMhz = dados["CPU clock"];
 
-            Console.WriteLine("\n--- SENSORES ENCONTRADOS ---");
-            foreach (var sensor in dados)
-            {
-                Console.WriteLine($"'{sensor.Key}': {sensor.Value}");
-            }
-            Console.WriteLine("----------------------------\n");
+            // GPU
+            if (dados.ContainsKey("GPU temperature")) telemetry.GpuTemp = dados["GPU temperature"];
+            if (dados.ContainsKey("GPU usage")) telemetry.GpuLoad = dados["GPU usage"];
+            if (dados.ContainsKey("Core clock")) telemetry.GpuMhz = dados["Core clock"];
+            if (dados.ContainsKey("Fan tachometer")) telemetry.FanRpm = dados["Fan tachometer"];
 
-            foreach (var kvp in dados)
-            {
-                string key = kvp.Key.ToLower();
+            // RAM
+            if (dados.ContainsKey("RAM usage")) telemetry.RamLoad = dados["RAM usage"];
 
-                if (key.Contains("gpu") && key.Contains("temp") && !key.Contains("limit")) 
-                    telemetry.GpuTemp = kvp.Value;
-                
-                if (key.Contains("gpu") && (key.Contains("usage") || key.Contains("uso"))) 
-                    telemetry.GpuLoad = kvp.Value;
-
-                if (key.Contains("cpu") && key.Contains("temp")) 
-                    telemetry.CpuTemp = kvp.Value;
-                    
-                if (key.Contains("cpu") && (key.Contains("usage") || key.Contains("uso") || key.Contains("total"))) 
-                    telemetry.CpuLoad = kvp.Value;
-            }
-            
-            telemetry.GpuName = "MSI Afterburner Source";
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Erro ao ler dados: {ex.Message}");
             msiConnected = false;
         }
     }
     else
     {
-        try { msi.Connect(); msiConnected = true; } catch { Thread.Sleep(1000); }
+        // --- MODO SIMULAÇÃO (Testes) ---
+        simTemp += (float)(rng.NextDouble() * 4 - 2);
+        simTemp = Math.Clamp(simTemp, 40, 90);
+        
+        telemetry.GpuTemp = (float)Math.Round(simTemp, 1);
+        telemetry.CpuTemp = (float)Math.Round(simTemp - 10, 1);
+        telemetry.CpuWatts = rng.Next(15, 65);
+        telemetry.GpuLoad = rng.Next(20, 100);
+        telemetry.GpuName = "Simulation Mode";
+        telemetry.IsSimulation = true;
+        
+        try { msi.Connect(); msiConnected = true; } catch {}
+    }
+
+    dbCounter++;
+    if (dbCounter >= 5)
+    {
+        Task.Run(() => db.SaveTelemetry(telemetry)); 
+        dbCounter = 0;
     }
 
     string json = JsonSerializer.Serialize(telemetry);
-    Console.WriteLine($">>> JSON FINAL: {json}");
+    Console.WriteLine(json);
 
-    Thread.Sleep(10000);
-}
-
-class HardwareTelemetry
-{
-    public string GpuName { get; set; } = "Unknown";
-    public float GpuTemp { get; set; }
-    public float GpuLoad { get; set; }
-    public float CpuTemp { get; set; }
-    public float CpuLoad { get; set; }
-    public bool IsSimulation { get; set; } = false;
+    Thread.Sleep(1000);
 }
