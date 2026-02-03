@@ -33,6 +33,14 @@ while (true)
 
     var telemetryData = new HardwareTelemetry();
 
+    var amdData = AmdGpuSensor.GetGpuData();
+    if (amdData.Temp > 0)
+    {
+        telemetryData.GpuName = amdData.Name;
+        telemetryData.GpuTemp = amdData.Temp;
+        telemetryData.GpuHotSpot = amdData.Temp + 10;
+    }
+
     foreach (var hardware in computer.Hardware)
     {
         readHardware(hardware, telemetryData); 
@@ -137,5 +145,6 @@ class HardwareTelemetry
 {
     public string GpuName { get; set; } = "Unknown";
     public float GpuTemp { get; set; }
+    public float GpuHotSpot { get; set; }
     public float GpuLoad { get; set; }
 }
