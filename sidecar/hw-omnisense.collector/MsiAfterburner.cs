@@ -70,7 +70,7 @@ public class MsiMonitor : IDisposable
         Console.WriteLine($"[MSI DEBUG] Versão: {header.Version} | Sensores: {header.EntryCount}");
         Console.WriteLine($"[MSI DEBUG] Tamanho Header: {header.HeaderSize} | Tamanho Entrada: {header.EntrySize}");
 
-        if (header.Signature != 0xDEADBEEF) 
+        if (header.Signature != 0x4D41484D && header.Signature != 0xDEADBEEF)
         {
             Console.WriteLine("[ERRO CRÍTICO] Assinatura de memória inválida! O Afterburner pode estar em outra versão ou travado.");
             return result;
