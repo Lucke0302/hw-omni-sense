@@ -1,126 +1,76 @@
-﻿using LibreHardwareMonitor.Hardware;
-using System.Security.Principal;
-using System.Management;
-using System.Runtime.Versioning;
-using System.Text.Json; // Importante para o JSON final
+﻿using System.Text.Json;
 
-if (!IsAdministrator())
+Console.WriteLine("=== HW OmniSense | MSI Afterburner Client ===");
+
+MsiMonitor msi = new MsiMonitor();
+bool msiConnected = false;
+
+try
 {
-    Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine("ERRO CRÍTICO: Execute como ADMINISTRADOR.");
-    Console.ResetColor();
-    return;
+    msi.Connect();
+    msiConnected = true;
+    Console.WriteLine("[INFO] Conectado ao MSI Afterburner com sucesso!");
+}
+catch
+{
+    Console.WriteLine("[AVISO] MSI Afterburner não encontrado. Usando SIMULAÇÃO.");
 }
 
-var computer = new Computer
-{
-    IsCpuEnabled = true,
-    IsGpuEnabled = true,
-    IsMemoryEnabled = true,
-    IsMotherboardEnabled = true, 
-    IsControllerEnabled = true,
-    IsStorageEnabled = true
-};
-
-try { computer.Open(); } catch {}
-
-Console.WriteLine("=== HW OmniSense | Backend Collector v1.3 (ADL Priority) ===");
-
-Random random = new Random();
+Random rng = new Random();
+float simTemp = 45.0f;
 
 while (true)
 {
-    Console.Clear();
-    Console.WriteLine($"=== Leitura em: {DateTime.Now} ===\n");
+    var telemetry = new HardwareTelemetry();
 
-    var telemetryData = new HardwareTelemetry();
-
-    var amdData = AmdGpuSensor.GetGpuData();
-    if (amdData.Temp > 0)
+    if (msiConnected)
     {
-        telemetryData.GpuName = amdData.Name;
-        telemetryData.GpuTemp = amdData.Temp;
-        telemetryData.GpuHotSpot = amdData.Temp + 12;
+        try
+        {
+            var dados = msi.ReadData();
+            
+            if (dados.ContainsKey("GPU temperature")) telemetry.GpuTemp = dados["GPU temperature"];
+            if (dados.ContainsKey("GPU1 temperature")) telemetry.GpuTemp = dados["GPU1 temperature"]; // As vezes vem com número
+            
+            if (dados.ContainsKey("GPU usage")) telemetry.GpuLoad = dados["GPU usage"];
+            if (dados.ContainsKey("GPU1 usage")) telemetry.GpuLoad = dados["GPU1 usage"];
+            
+            if (dados.ContainsKey("CPU temperature")) telemetry.CpuTemp = dados["CPU temperature"];
+            if (dados.ContainsKey("CPU usage")) telemetry.CpuLoad = dados["CPU usage"];
+            
+            telemetry.GpuName = "MSI Afterburner Source";
+        }
+        catch
+        {
+            msiConnected = false;
+        }
+    }
+    else
+    {
+        simTemp += (float)(rng.NextDouble() * 4 - 2);
+        simTemp = Math.Clamp(simTemp, 40, 90);
         
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine($"[ADL] Sucesso: {amdData.Name} @ {amdData.Temp}°C");
-        Console.ResetColor();
-    }
-
-    foreach (var hardware in computer.Hardware)
-    {
-        readHardware(hardware, telemetryData); 
-    }
-    
-    if (telemetryData.GpuTemp == 0)
-    {
-        telemetryData.GpuTemp = 50.0f;
-        Console.WriteLine("[AVISO] GPU sem leitura. Usando Mock.");
-    }
-
-    Thread.Sleep(20000); // 2 segundos
-}
-
-
-static void readHardware(IHardware hardware, HardwareTelemetry data)
-{
-    try { hardware.Update(); } catch {}
-
-    Console.WriteLine($"\n>>> {hardware.Name} ({hardware.HardwareType}) <<<");
-
-    foreach (var sensor in hardware.Sensors)
-    {
-        float valor = sensor.Value.GetValueOrDefault();
+        telemetry.GpuTemp = (float)Math.Round(simTemp, 1);
+        telemetry.CpuTemp = (float)Math.Round(simTemp - 10, 1);
+        telemetry.GpuLoad = rng.Next(20, 100);
+        telemetry.GpuName = "Simulation Mode";
+        telemetry.IsSimulation = true;
         
-        if (hardware.HardwareType == HardwareType.Cpu)
-        {
-            data.CpuName = hardware.Name;
-            if (sensor.SensorType == SensorType.Temperature) 
-            {
-                if (valor > data.CpuTemp) data.CpuTemp = valor;
-            }
-            if (sensor.SensorType == SensorType.Load && sensor.Name.Contains("Total")) 
-                data.CpuLoad = valor;
-        }
-
-        if (hardware.HardwareType == HardwareType.GpuAmd || hardware.HardwareType == HardwareType.GpuNvidia)
-        {
-            if (data.GpuTemp == 0 && valor > 0 && sensor.SensorType == SensorType.Temperature)
-            {
-                data.GpuTemp = valor;
-                data.GpuName = hardware.Name;
-            }
-        }
-
-        if (sensor.SensorType == SensorType.Temperature || sensor.SensorType == SensorType.Load)
-        {
-             if (valor == 0) Console.ForegroundColor = ConsoleColor.DarkYellow;
-             Console.WriteLine($"  [{sensor.SensorType}] {sensor.Name}: {valor:0.0}");
-             Console.ResetColor();
-        }
+        try { msi.Connect(); msiConnected = true; } catch {}
     }
 
-    foreach (var subHardware in hardware.SubHardware)
-    {
-        readHardware(subHardware, data);
-    }
-}
+    string json = JsonSerializer.Serialize(telemetry);
+    Console.WriteLine(json);
 
-static bool IsAdministrator()
-{
-    var identity = WindowsIdentity.GetCurrent();
-    var principal = new WindowsPrincipal(identity);
-    return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    Thread.Sleep(10000);
 }
 
 class HardwareTelemetry
 {
     public string GpuName { get; set; } = "Unknown";
     public float GpuTemp { get; set; }
-    public float GpuHotSpot { get; set; }
     public float GpuLoad { get; set; }
-    
-    public string CpuName { get; set; } = "Unknown";
     public float CpuTemp { get; set; }
     public float CpuLoad { get; set; }
+    public bool IsSimulation { get; set; } = false;
 }
