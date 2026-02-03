@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-Console.WriteLine("=== HW OmniSense | MSI Afterburner Client ===");
+Console.WriteLine("=== HW OmniSense | MSI Afterburner Client (Discovery Mode) ===");
 
 MsiMonitor msi = new MsiMonitor();
 bool msiConnected = false;
@@ -13,11 +13,8 @@ try
 }
 catch
 {
-    Console.WriteLine("[AVISO] MSI Afterburner não encontrado. Usando SIMULAÇÃO.");
+    Console.WriteLine("[AVISO] MSI Afterburner não encontrado. Certifique-se que ele está aberto.");
 }
-
-Random rng = new Random();
-float simTemp = 45.0f;
 
 while (true)
 {
@@ -28,39 +25,47 @@ while (true)
         try
         {
             var dados = msi.ReadData();
-            
-            if (dados.ContainsKey("GPU temperature")) telemetry.GpuTemp = dados["GPU temperature"];
-            if (dados.ContainsKey("GPU1 temperature")) telemetry.GpuTemp = dados["GPU1 temperature"]; // As vezes vem com número
-            
-            if (dados.ContainsKey("GPU usage")) telemetry.GpuLoad = dados["GPU usage"];
-            if (dados.ContainsKey("GPU1 usage")) telemetry.GpuLoad = dados["GPU1 usage"];
-            
-            if (dados.ContainsKey("CPU temperature")) telemetry.CpuTemp = dados["CPU temperature"];
-            if (dados.ContainsKey("CPU usage")) telemetry.CpuLoad = dados["CPU usage"];
+
+
+            Console.WriteLine("\n--- SENSORES ENCONTRADOS ---");
+            foreach (var sensor in dados)
+            {
+                Console.WriteLine($"'{sensor.Key}': {sensor.Value}");
+            }
+            Console.WriteLine("----------------------------\n");
+
+            foreach (var kvp in dados)
+            {
+                string key = kvp.Key.ToLower();
+
+                if (key.Contains("gpu") && key.Contains("temp") && !key.Contains("limit")) 
+                    telemetry.GpuTemp = kvp.Value;
+                
+                if (key.Contains("gpu") && (key.Contains("usage") || key.Contains("uso"))) 
+                    telemetry.GpuLoad = kvp.Value;
+
+                if (key.Contains("cpu") && key.Contains("temp")) 
+                    telemetry.CpuTemp = kvp.Value;
+                    
+                if (key.Contains("cpu") && (key.Contains("usage") || key.Contains("uso") || key.Contains("total"))) 
+                    telemetry.CpuLoad = kvp.Value;
+            }
             
             telemetry.GpuName = "MSI Afterburner Source";
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erro ao ler dados: {ex.Message}");
             msiConnected = false;
         }
     }
     else
     {
-        simTemp += (float)(rng.NextDouble() * 4 - 2);
-        simTemp = Math.Clamp(simTemp, 40, 90);
-        
-        telemetry.GpuTemp = (float)Math.Round(simTemp, 1);
-        telemetry.CpuTemp = (float)Math.Round(simTemp - 10, 1);
-        telemetry.GpuLoad = rng.Next(20, 100);
-        telemetry.GpuName = "Simulation Mode";
-        telemetry.IsSimulation = true;
-        
-        try { msi.Connect(); msiConnected = true; } catch {}
+        try { msi.Connect(); msiConnected = true; } catch { Thread.Sleep(1000); }
     }
 
     string json = JsonSerializer.Serialize(telemetry);
-    Console.WriteLine(json);
+    Console.WriteLine($">>> JSON FINAL: {json}");
 
     Thread.Sleep(10000);
 }
