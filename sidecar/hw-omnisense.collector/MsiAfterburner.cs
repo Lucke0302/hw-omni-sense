@@ -8,7 +8,6 @@ public class MsiMonitor : IDisposable
     private MemoryMappedViewAccessor? _accessor;
     private const string MapName = "MAHMSharedMemory";
 
-    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MAHM_SHARED_MEMORY_HEADER
     {
@@ -62,33 +61,28 @@ public class MsiMonitor : IDisposable
 
         if (_accessor == null) return result;
 
-        // Tenta ler o cabeçalho
         MAHM_SHARED_MEMORY_HEADER header;
         _accessor.Read(0, out header);
 
-        Console.WriteLine($"[MSI DEBUG] Assinatura: {header.Signature:X} (Esperado: DEADBEEF)");
-        Console.WriteLine($"[MSI DEBUG] Versão: {header.Version} | Sensores: {header.EntryCount}");
-        Console.WriteLine($"[MSI DEBUG] Tamanho Header: {header.HeaderSize} | Tamanho Entrada: {header.EntrySize}");
-
+        Console.WriteLine($"[MSI DEBUG] Assinatura: {header.Signature:X}");
+        
         if (header.Signature != 0x4D41484D && header.Signature != 0xDEADBEEF)
         {
-            Console.WriteLine("[ERRO CRÍTICO] Assinatura de memória inválida! O Afterburner pode estar em outra versão ou travado.");
+            Console.WriteLine("[ERRO] Assinatura inválida.");
             return result;
         }
 
-        if (header.EntryCount == 0)
-        {
-            Console.WriteLine("[AVISO] MSI Afterburner conectado, mas reportando ZERO sensores.");
-            Console.WriteLine("DICA: Abra as configurações do Afterburner > Monitoramento e garanta que os gráficos estão ativos.");
-            return result;
-        }
+        if (header.EntryCount == 0) return result;
+
+        byte[] buffer = new byte[header.EntrySize];
 
         for (int i = 0; i < header.EntryCount; i++)
         {
             long offset = header.HeaderSize + (i * header.EntrySize);
             
-            MAHM_SHARED_MEMORY_ENTRY entry;
-            _accessor.Read(offset, out entry);
+            _accessor.ReadArray(offset, buffer, 0, buffer.Length);
+
+            MAHM_SHARED_MEMORY_ENTRY entry = BytesToStruct<MAHM_SHARED_MEMORY_ENTRY>(buffer);
 
             string cleanName = entry.SrcName.Trim('\0');
             
@@ -99,6 +93,19 @@ public class MsiMonitor : IDisposable
         }
 
         return result;
+    }
+
+    private static T BytesToStruct<T>(byte[] data) where T : struct
+    {
+        GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+        try
+        {
+            return Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
+        }
+        finally
+        {
+            handle.Free();
+        }
     }
 
     public void Dispose()
