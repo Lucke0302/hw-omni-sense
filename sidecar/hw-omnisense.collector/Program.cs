@@ -52,14 +52,13 @@ while (true)
         readHardware(hardware, telemetryData); 
     }
     
-    // 4. FALLBACK PARA GPU (Se ADL e LHM falharem)
     if (telemetryData.GpuTemp == 0)
     {
         telemetryData.GpuTemp = 50.0f;
         Console.WriteLine("[AVISO] GPU sem leitura. Usando Mock.");
     }
 
-    Thread.Sleep(2000); // 2 segundos
+    Thread.Sleep(20000); // 2 segundos
 }
 
 
