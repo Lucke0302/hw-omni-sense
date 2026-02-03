@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj": {}
+    "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj": {
+    "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
+        "projectUniqueName": "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
         "projectName": "hw-omnisense.collector",
-        "projectPath": "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
+        "projectPath": "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
         "packagesPath": "C:\\Users\\Lucas.Moraes\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\obj\\",
+        "outputPath": "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Lucas.Moraes\\AppData\\Roaming\\NuGet\\NuGet.Config"

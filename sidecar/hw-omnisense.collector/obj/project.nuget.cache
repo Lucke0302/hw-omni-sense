@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "E2i4UK1ZZFs=",
+  "dgSpecHash": "M+e3PR1PIK4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Lucas.Moraes\\Documents\\Testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
+  "projectFilePath": "C:\\users\\lucas.moraes\\documents\\testes\\hw-omni-sense\\sidecar\\hw-omnisense.collector\\hw-omnisense.collector.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lucas.Moraes\\.nuget\\packages\\blacksharp.core\\1.0.7\\blacksharp.core.1.0.7.nupkg.sha512",
     "C:\\Users\\Lucas.Moraes\\.nuget\\packages\\diskinfotoolkit\\1.1.1\\diskinfotoolkit.1.1.1.nupkg.sha512",
