@@ -10,6 +10,8 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@tamagui/animations-css": "^2.0.0-rc.2",
+    "@tamagui/animations-react-native": "^2.0.0-rc.2",
     "@tamagui/config": "^2.0.0-rc.0",
     "@tamagui/vite-plugin": "^2.0.0-rc.0",
     "@tauri-apps/api": "^2",
