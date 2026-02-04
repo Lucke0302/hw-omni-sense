@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Command, Child } from "@tauri-apps/plugin-shell";
 import { open } from "@tauri-apps/plugin-dialog";
-import { YStack, Text, H2, Card, XStack, Separator, Button } from "tamagui";
+import { YStack, Text, H2, XStack, Button } from "tamagui";
 import { StatCard } from "./components/StatCard";
 import { getLoadColor, getTempColor, isCriticalState } from "./utils/status";
+import { DetailPanel } from "./components/DetailPanel";
 
 interface TelemetryData {
   CpuTemp: number; CpuLoad: number; GpuTemp: number; GpuLoad: number; IsSimulation: boolean;
@@ -14,6 +15,8 @@ let activeSidecar: Child | null = null;
 function App() {
   const [data, setData] = useState<TelemetryData | null>(null);
   const [status, setStatus] = useState("Inicializando...");
+
+  const [selectedView, setSelectedView] = useState<'CPU' | 'GPU' | 'RAM' | null>(null);
 
   const spawnSidecar = async (customPath?: string, cleanDb = false) => {
     if (activeSidecar) {
@@ -93,56 +96,65 @@ function App() {
   };
 
   return (
-      <YStack f={1} p="$4" gap="$4">
-        
-        <div className="cyber-grid-bg cyber-circuit-bg" />
-        <div className="vignette" />
-        
-        <YStack ai="center" mb="$2">
-          <H2 color="$color" fontFamily="$heading">OmniSense</H2>
-          <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
-        </YStack>
-
-        <XStack 
-          flexWrap="wrap" 
-          gap="$4" 
-          jc="center"
-          width="100%"
-        >
+        <YStack f={1} p="$4" gap="$4">
           
-          <StatCard 
-            title="CPU" 
-            temp={data?.CpuTemp} 
-            load={data?.CpuLoad}
-            tempColor={getTempColor(data?.CpuTemp)}
-            loadColor={getLoadColor(data?.CpuLoad)}
-            isCritical={isCriticalState(data?.CpuTemp)}
-          />
+          <div className="cyber-grid-bg" />
+          <div className="vignette" />
+          
+          {selectedView ? (
+            <DetailPanel 
+              type={selectedView} 
+              data={data} 
+              onBack={() => setSelectedView(null)}
+            />
+          ) : (
+            
+            <>
+              <YStack ai="center" mb="$2">
+                <H2 color="$color" fontFamily="$heading">OmniSense</H2>
+                <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
+              </YStack>
 
-          <StatCard 
-            title="GPU" 
-            temp={data?.GpuTemp} 
-            load={data?.GpuLoad} 
-            tempColor={getTempColor(data?.GpuTemp)}
-            loadColor={getLoadColor(data?.GpuLoad)}
-            isCritical={isCriticalState(data?.GpuTemp)}
-          />
+              <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
+                
+                <StatCard 
+                  title="CPU" 
+                  temp={data?.CpuTemp} 
+                  load={data?.CpuLoad}
+                  tempColor={getTempColor(data?.CpuTemp)}
+                  loadColor={getLoadColor(data?.CpuLoad)}
+                  isCritical={isCriticalState(data?.CpuTemp)}
+                  onClick={() => setSelectedView('CPU')}
+                />
 
-          <StatCard 
-            title="RAM" 
-            temp={undefined} 
-            load={0}
-            loadColor={getLoadColor(0)} 
-          />
+                <StatCard 
+                  title="GPU" 
+                  temp={data?.GpuTemp} 
+                  load={data?.GpuLoad} 
+                  tempColor={getTempColor(data?.GpuTemp)}
+                  loadColor={getLoadColor(data?.GpuLoad)}
+                  isCritical={isCriticalState(data?.GpuTemp)}
+                  onClick={() => setSelectedView('GPU')}
+                />
 
-        </XStack>
+                <StatCard 
+                  title="RAM" 
+                  temp={undefined} 
+                  load={0}
+                  loadColor={getLoadColor(0)} 
+                  onClick={() => setSelectedView('RAM')}
+                />
 
-        <XStack gap="$3" mt="auto" jc="center">
-          <Button size="$3" onPress={handleConfig}>⚙️ Config</Button>
-          <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
-        </XStack>
-      </YStack>
-    );
-  }
+              </XStack>
+
+              <XStack gap="$3" mt="auto" jc="center">
+                <Button size="$3" onPress={handleConfig}>⚙️ Config</Button>
+                <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
+              </XStack>
+            </>
+          )}
+        </YStack>
+      );
+    }
 
 export default App;

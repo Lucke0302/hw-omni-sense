@@ -33,7 +33,7 @@ export function DetailPanel({ type, onBack, data }: DetailPanelProps) {
           <H2 fontFamily="$heading" color="$color">Detalhes: {type}</H2>
           <Text color="$gray10" fontFamily="$body">Análise Profunda em Tempo Real</Text>
         </YStack>
-        <Button size="$3" theme="red" onPress={onBack} fontWeight="bold">
+        <Button size="$3" theme="red" onPress={onBack}>
           X Fechar
         </Button>
       </XStack>

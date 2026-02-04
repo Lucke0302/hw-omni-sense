@@ -45,13 +45,14 @@ const CardFrame = styled(YStack, {
   }
 });
 
-export function StatCard({ title, temp, load, tempColor, loadColor, isCritical }: StatCardProps) {
+export function StatCard({ title, temp, load, tempColor, loadColor, isCritical, onClick }: StatCardProps) {
   return (
     <CardFrame 
       className="smooth-transition glass-panel"
       borderWidth={isCritical ? 2 : 1}
       borderColor={isCritical ? "$red10" : "$borderColor"}
       scale={isCritical ? 1.05 : 1}
+      onPress={onClick}
     >
       <YStack gap="$4"> 
         <XStack jc="space-between" ai="center">
