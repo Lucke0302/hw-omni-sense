@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Diagnostics;
+using Microsoft.Data.Sqlite;
 using HwOmniSense.Collector.Monitors;
 using HwOmniSense.Collector.Models;
 using HwOmniSense.Collector.Services;
@@ -30,7 +31,9 @@ internal class Program
         using MsiMonitor msi = new MsiMonitor();
         DatabaseService db = new DatabaseService();
 
-        try { db.Initialize(); } catch { }
+        Console.WriteLine($"[DB] Caminho do Banco: {db.DatabasePath}");
+
+        try { db.Initialize(); } catch (Exception ex) { Console.WriteLine($"[ERRO DB INIT]: {ex.Message}"); }
 
         string msiPath = @"C:\Program Files (x86)\MSI Afterburner\MSIAfterburner.exe";
 
@@ -38,10 +41,17 @@ internal class Program
         {
             if (arg == "--clean")
             {
-                Console.WriteLine("[INFO] Limpando dados de simulação...");
+                Console.WriteLine("[INFO] Comando --clean recebido.");
                 try 
                 { 
-                    if (File.Exists("hw-omnisense.db")) File.Delete("hw-omnisense.db");
+                    SqliteConnection.ClearAllPools();
+                    
+                    if (File.Exists(db.DatabasePath)) 
+                    {
+                        File.Delete(db.DatabasePath);
+                        Console.WriteLine($"[SUCESSO] Banco deletado em: {db.DatabasePath}");
+                    }
+                    
                     db.Initialize();
                 } 
                 catch (Exception ex) { Console.WriteLine($"[ERRO AO LIMPAR]: {ex.Message}"); }

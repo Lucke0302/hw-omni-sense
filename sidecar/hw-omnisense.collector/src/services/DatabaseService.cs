@@ -1,27 +1,40 @@
 using Microsoft.Data.Sqlite;
 using HwOmniSense.Collector.Models;
+using System;
+using System.IO;
 
 namespace HwOmniSense.Collector.Services;
 
 public class DatabaseService
 {
-    private const string DbName = "hwsense.db";
+    private const string DbName = "hw-omnisense.db"; 
     private string _connectionString;
+    
+    public string DatabasePath { get; private set; } 
 
     public DatabaseService()
     {
-        // Define o caminho do DB para rodar junto com o executável
-        string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DbName);
-        _connectionString = $"Data Source={dbPath}";
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        
+        string folder = Path.Combine(appData, "OmniSense");
+        if (!Directory.Exists(folder))
+        {
+            Directory.CreateDirectory(folder);
+        }
+
+        // 3. Define o caminho final
+        DatabasePath = Path.Combine(folder, DbName);
+        _connectionString = $"Data Source={DatabasePath}";
     }
 
     public void Initialize()
     {
+        string dir = Path.GetDirectoryName(DatabasePath);
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
 
-        // Cria a tabela se não existir
-        // Salvamos: Data, Temps, Loads e Potência
         string createTableCmd = @"
             CREATE TABLE IF NOT EXISTS telemetry (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,8 +46,6 @@ public class DatabaseService
                 cpu_watts REAL,
                 is_gaming INTEGER
             );
-            
-            -- Cria um índice para as consultas de data ficarem rápidas
             CREATE INDEX IF NOT EXISTS idx_timestamp ON telemetry(timestamp);
         ";
 
@@ -53,15 +64,12 @@ public class DatabaseService
 
         using var command = new SqliteCommand(insertCmd, connection);
         
-        // Parâmetros (Evita SQL Injection e erros de formatação)
         command.Parameters.AddWithValue("@time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         command.Parameters.AddWithValue("@gt", data.GpuTemp);
         command.Parameters.AddWithValue("@gl", data.GpuLoad);
         command.Parameters.AddWithValue("@ct", data.CpuTemp);
         command.Parameters.AddWithValue("@cl", data.CpuLoad);
         command.Parameters.AddWithValue("@cw", data.CpuWatts);
-        
-        // Se a carga da GPU for alta (>80%), marcamos como 'Jogando' (1)
         command.Parameters.AddWithValue("@ig", data.GpuLoad > 80 ? 1 : 0);
 
         command.ExecuteNonQuery();
@@ -72,7 +80,7 @@ public class DatabaseService
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
-        using var command = new SqliteCommand("DELETE FROM telemetry; VACUUM;", connection); // VACUUM compacta o arquivo
+        using var command = new SqliteCommand("DELETE FROM telemetry; VACUUM;", connection);
         command.ExecuteNonQuery();
     }
 

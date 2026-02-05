@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:msi": "tauri build && move src-tauri\\target\\release\\bundle\\msi\\*.msi .\\"
   },
   "dependencies": {
     "@tamagui/animations-css": "^2.0.0-rc.2",
