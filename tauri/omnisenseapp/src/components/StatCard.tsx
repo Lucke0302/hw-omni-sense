@@ -2,8 +2,11 @@ import { YStack, XStack, Text, Separator, styled } from "tamagui";
 
 interface StatCardProps {
   title: string;
-  temp?: number;
-  load?: number;
+  temp?: number | null;
+  load?: number | null;
+  frequency?: number | null;
+  voltage?: number | null;
+  
   tempColor?: string;
   loadColor: string;
   isCritical?: boolean;
@@ -16,20 +19,15 @@ const CardFrame = styled(YStack, {
   maxWidth: 300,
   p: "$4",
   borderRadius: "$4",
-  
   backgroundColor: "transparent", 
-  
   y: 0,
   opacity: 1,
   scale: 1, 
-  
   cursor: 'pointer',
-  
   shadowColor: "#000000", 
   shadowRadius: 5,
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.1,
-
   hoverStyle: {
     scale: 1.05,
     y: -5,
@@ -38,14 +36,17 @@ const CardFrame = styled(YStack, {
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
   },
-  
-  pressStyle: {
-    scale: 0.98,
-    y: 0,
-  }
+  pressStyle: { scale: 0.98, y: 0 }
 });
 
-export function StatCard({ title, temp, load, tempColor, loadColor, isCritical, onClick }: StatCardProps) {
+export function StatCard({ title, temp, load, frequency, voltage, tempColor, loadColor, isCritical, onClick }: StatCardProps) {
+  
+  const formatValue = (val: number | undefined | null, unit: string, decimals = 1) => {
+    if (val === undefined || val === null || (val === 0 && unit !== "%")) return "--";
+    
+    return `${val.toFixed(decimals)} ${unit}`;
+  };
+
   return (
     <CardFrame 
       className="smooth-transition glass-panel"
@@ -54,42 +55,44 @@ export function StatCard({ title, temp, load, tempColor, loadColor, isCritical, 
       scale={isCritical ? 1.05 : 1}
       onPress={onClick}
     >
-      <YStack gap="$4"> 
-        <XStack jc="space-between" ai="center">
+      <YStack gap="$2"> 
+        <XStack jc="space-between" ai="center" mb="$2">
           <Text fontWeight="bold" fontSize="$4" color="$gray11" fontFamily="$heading">
             {title}
           </Text>
           {isCritical && <Text fontSize="$4">🔥</Text>}
         </XStack>
         
-        <Separator />
+        <Separator borderColor="$gray6" />
         
-        {temp !== undefined && (
-          <XStack jc="space-between" ai="center">
-            <Text color="$gray10" fontSize="$3">Temp:</Text>
-            <Text 
-              fontFamily="$tech"
-              fontSize="$4"
-              color={tempColor}
-              fontWeight="700"
-              letterSpacing={1}
-            >
-              {temp.toFixed(1)} °C
-            </Text>
-          </XStack>
-        )}
+        <XStack jc="space-between" ai="center">
+          <Text color="$gray10" fontSize="$3">Temp:</Text>
+          <Text fontFamily="$tech" fontSize="$4" color={tempColor || "$gray11"} fontWeight="700">
+            {formatValue(temp, "°C")}
+          </Text>
+        </XStack>
 
         <XStack jc="space-between" ai="center">
           <Text color="$gray10" fontSize="$3">Uso:</Text>
-          <Text 
-             fontFamily="$tech"
-             fontSize="$4"
-             color={loadColor}
-             fontWeight="700"
-          >
-            {load?.toFixed(1) || "--"} %
+          <Text fontFamily="$tech" fontSize="$4" color={loadColor} fontWeight="700">
+            {formatValue(load, "%", 1)}
           </Text>
         </XStack>
+
+        <XStack jc="space-between" ai="center">
+            <Text color="$gray10" fontSize="$3">Clock:</Text>
+            <Text fontFamily="$tech" fontSize="$3" color="$gray11">
+            {formatValue(frequency, "MHz", 0)}
+            </Text>
+        </XStack>
+
+        <XStack jc="space-between" ai="center">
+            <Text color="$gray10" fontSize="$3">Volt:</Text>
+            <Text fontFamily="$tech" fontSize="$3" color="$yellow10">
+            {formatValue(voltage, "V", 2)}
+            </Text>
+        </XStack>
+
       </YStack>
     </CardFrame>
   );

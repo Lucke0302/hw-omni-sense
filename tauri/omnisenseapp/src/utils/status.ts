@@ -1,4 +1,4 @@
-const COLORS = {
+export const COLORS = {
   silver: "$gray9",
   green: "$green9",
   lime: "$green11",

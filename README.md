@@ -6,6 +6,8 @@
 [![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Bot-Node.js-339933?logo=node.js)](https://nodejs.org/)
 
+[![Download Latest](https://img.shields.io/github/v/release/lucke0302/hw-omni-sense?label=Download%20Latest%20.msi&style=for-the-badge&color=green)](https://github.com/lucke0302/hw-omni-sense/releases/latest/)
+
 **HW OmniSense** is a lightweight, open-source hardware monitoring solution designed for enthusiasts who demand total control. Built with a modern **Tauri + React + TypeScript** stack, it bridges the gap between low-level hardware metrics and high-level remote accessibility.
 
 Originally conceived to monitor high-performance GPUs in challenging tropical climates, HW OmniSense provides real-time tracking of Temperatures, Hot Spots, VRAM, and FPS, with a unique **WhatsApp integration** for remote status alerts.

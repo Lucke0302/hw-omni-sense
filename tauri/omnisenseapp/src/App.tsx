@@ -5,9 +5,30 @@ import { YStack, Text, H2, XStack, Button } from "tamagui";
 import { StatCard } from "./components/StatCard";
 import { getLoadColor, getTempColor, isCriticalState } from "./utils/status";
 import { DetailPanel } from "./components/DetailPanel";
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { RemoteConnect } from "./components/RemoteConnect";
 
 interface TelemetryData {
-  CpuTemp: number; CpuLoad: number; GpuTemp: number; GpuLoad: number; IsSimulation: boolean;
+  CpuTemp: number; 
+  CpuLoad: number; 
+  CpuMhz: number;
+  CpuVolt: number;
+  
+  GpuTemp: number; 
+  GpuLoad: number; 
+  GpuMhz: number;
+  GpuVolt: number;
+  
+  IsSimulation: boolean;
+  CpuCoreTemps?: number[]; 
+  CpuHotspotDelta?: number; 
+  
+  RamUsed: number; 
+  RamTotal: number; 
+  RamMhz: number; 
+  RamTemp: number;
+  RamVolt: number; 
 }
 
 let activeSidecar: Child | null = null;
@@ -15,6 +36,7 @@ let activeSidecar: Child | null = null;
 function App() {
   const [data, setData] = useState<TelemetryData | null>(null);
   const [status, setStatus] = useState("Inicializando...");
+  const [showRemote, setShowRemote] = useState(false);
 
   const [selectedView, setSelectedView] = useState<'CPU' | 'GPU' | 'RAM' | null>(null);
 
@@ -95,20 +117,37 @@ function App() {
     spawnSidecar(savedPath, true);
   };
 
-  return (
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (update?.available) {
+          const yes = confirm(`Atualização ${update.version} disponível! Baixar agora?`);
+          if (yes) {
+            await update.downloadAndInstall();
+            await relaunch();
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar update:", error);
+      }
+    };
+
+    checkForUpdates();
+  }, []);
+
+  const ramPercentage = (data?.RamUsed && data?.RamTotal) 
+    ? (data.RamUsed / data.RamTotal) * 100 
+    : 0;
+
+return (
         <YStack f={1} p="$4" gap="$4">
-          
           <div className="cyber-grid-bg" />
           <div className="vignette" />
           
           {selectedView ? (
-            <DetailPanel 
-              type={selectedView} 
-              data={data} 
-              onBack={() => setSelectedView(null)}
-            />
+            <DetailPanel type={selectedView} data={data} onBack={() => setSelectedView(null)} />
           ) : (
-            
             <>
               <YStack ai="center" mb="$2">
                 <H2 color="$color" fontFamily="$heading">OmniSense</H2>
@@ -117,31 +156,40 @@ function App() {
 
               <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
                 
+                {/* CPU CARD */}
                 <StatCard 
                   title="CPU" 
                   temp={data?.CpuTemp} 
                   load={data?.CpuLoad}
+                  frequency={data?.CpuMhz} 
+                  voltage={data?.CpuVolt}
                   tempColor={getTempColor(data?.CpuTemp)}
                   loadColor={getLoadColor(data?.CpuLoad)}
                   isCritical={isCriticalState(data?.CpuTemp)}
                   onClick={() => setSelectedView('CPU')}
                 />
 
+                {/* GPU CARD */}
                 <StatCard 
                   title="GPU" 
                   temp={data?.GpuTemp} 
                   load={data?.GpuLoad} 
+                  frequency={data?.GpuMhz} 
+                  voltage={data?.GpuVolt}
                   tempColor={getTempColor(data?.GpuTemp)}
                   loadColor={getLoadColor(data?.GpuLoad)}
                   isCritical={isCriticalState(data?.GpuTemp)}
                   onClick={() => setSelectedView('GPU')}
                 />
 
+                {/* RAM CARD */}
                 <StatCard 
                   title="RAM" 
-                  temp={undefined} 
-                  load={0}
-                  loadColor={getLoadColor(0)} 
+                  temp={data && data.RamTemp > 0 ? data.RamTemp : undefined} 
+                  load={ramPercentage > 0 ? ramPercentage : undefined}
+                  frequency={data?.RamMhz}
+                  voltage={data?.RamVolt} 
+                  loadColor={getLoadColor(ramPercentage)} 
                   onClick={() => setSelectedView('RAM')}
                 />
 
@@ -155,6 +203,6 @@ function App() {
           )}
         </YStack>
       );
-    }
+}
 
 export default App;

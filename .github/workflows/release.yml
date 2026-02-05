@@ -18,25 +18,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cache para o .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0'
+          dotnet-version: '8.0.x'
+          cache: true
+          cache-dependency-path: sidecar/hw-omnisense.collector/hw-omnisense.collector.csproj
 
+      # Cache para o Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: tauri/omnisenseapp/package-lock.json
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # Cache para o Rust
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri/omnisenseapp/src-tauri'
 
       - name: Build C# Sidecar
         run: |
           cd sidecar/hw-omnisense.collector
           dotnet publish -c Release -r win-x64 --self-contained -o ../../build-output
 
-      # 3. PREPARAR BINÁRIOS (Corrigido)
       - name: Prepare Sidecar
         run: |
           mkdir tauri/omnisenseapp/src-tauri/binaries
