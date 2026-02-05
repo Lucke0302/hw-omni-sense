@@ -141,68 +141,68 @@ function App() {
     : 0;
 
 return (
-        <YStack f={1} p="$4" gap="$4">
-          <div className="cyber-grid-bg" />
-          <div className="vignette" />
-          
-          {selectedView ? (
-            <DetailPanel type={selectedView} data={data} onBack={() => setSelectedView(null)} />
-          ) : (
-            <>
-              <YStack ai="center" mb="$2">
-                <H2 color="$color" fontFamily="$heading">OmniSense</H2>
-                <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
-              </YStack>
+    <YStack f={1} p="$4" gap="$4">
+      <div className="cyber-grid-bg" />
+      <div className="vignette" />
+      
+      {showRemote ? (
+        <RemoteConnect onClose={() => setShowRemote(false)} />
+      ) : selectedView ? (
+        <DetailPanel type={selectedView} data={data} onBack={() => setSelectedView(null)} />
+      ) : (
+        <>
+          <YStack ai="center" mb="$2">
+            <H2 color="$color" fontFamily="$heading">OmniSense</H2>
+            <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
+          </YStack>
 
-              <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
-                
-                {/* CPU CARD */}
-                <StatCard 
-                  title="CPU" 
-                  temp={data?.CpuTemp} 
-                  load={data?.CpuLoad}
-                  frequency={data?.CpuMhz} 
-                  voltage={data?.CpuVolt}
-                  tempColor={getTempColor(data?.CpuTemp)}
-                  loadColor={getLoadColor(data?.CpuLoad)}
-                  isCritical={isCriticalState(data?.CpuTemp)}
-                  onClick={() => setSelectedView('CPU')}
-                />
+          <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
+            
+            <StatCard 
+              title="CPU" 
+              temp={data?.CpuTemp} 
+              load={data?.CpuLoad}
+              frequency={data?.CpuMhz} 
+              voltage={data?.CpuVolt}
+              tempColor={getTempColor(data?.CpuTemp)}
+              loadColor={getLoadColor(data?.CpuLoad)}
+              isCritical={isCriticalState(data?.CpuTemp)}
+              onClick={() => setSelectedView('CPU')}
+            />
 
-                {/* GPU CARD */}
-                <StatCard 
-                  title="GPU" 
-                  temp={data?.GpuTemp} 
-                  load={data?.GpuLoad} 
-                  frequency={data?.GpuMhz} 
-                  voltage={data?.GpuVolt}
-                  tempColor={getTempColor(data?.GpuTemp)}
-                  loadColor={getLoadColor(data?.GpuLoad)}
-                  isCritical={isCriticalState(data?.GpuTemp)}
-                  onClick={() => setSelectedView('GPU')}
-                />
+            <StatCard 
+              title="GPU" 
+              temp={data?.GpuTemp} 
+              load={data?.GpuLoad} 
+              frequency={data?.GpuMhz} 
+              voltage={data?.GpuVolt}
+              tempColor={getTempColor(data?.GpuTemp)}
+              loadColor={getLoadColor(data?.GpuLoad)}
+              isCritical={isCriticalState(data?.GpuTemp)}
+              onClick={() => setSelectedView('GPU')}
+            />
 
-                {/* RAM CARD */}
-                <StatCard 
-                  title="RAM" 
-                  temp={data && data.RamTemp > 0 ? data.RamTemp : undefined} 
-                  load={ramPercentage > 0 ? ramPercentage : undefined}
-                  frequency={data?.RamMhz}
-                  voltage={data?.RamVolt} 
-                  loadColor={getLoadColor(ramPercentage)} 
-                  onClick={() => setSelectedView('RAM')}
-                />
+            <StatCard 
+              title="RAM" 
+              temp={data && data.RamTemp > 0 ? data.RamTemp : undefined} 
+              load={ramPercentage > 0 ? ramPercentage : undefined}
+              frequency={data?.RamMhz}
+              voltage={data?.RamVolt} 
+              loadColor={getLoadColor(ramPercentage)} 
+              onClick={() => setSelectedView('RAM')}
+            />
 
-              </XStack>
+          </XStack>
 
-              <XStack gap="$3" mt="auto" jc="center">
-                <Button size="$3" onPress={handleConfig}>⚙️ Config</Button>
-                <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
-              </XStack>
-            </>
-          )}
-        </YStack>
-      );
+          <XStack gap="$3" mt="auto" jc="center">
+            <Button size="$3" onPress={handleConfig}>⚙️ Config</Button>
+            <Button size="$3" onPress={() => setShowRemote(true)}>📱 Remote</Button>
+            <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
+          </XStack>
+        </>
+      )}
+    </YStack>
+  );
 }
 
 export default App;

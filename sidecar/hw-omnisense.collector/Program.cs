@@ -163,7 +163,15 @@ internal class Program
 
                     float GetValue(string[] keys) 
                     {
-                        foreach(var key in keys) if(data.ContainsKey(key)) return data[key];
+                        foreach(var key in keys) 
+                        {
+                            if(data.ContainsKey(key)) 
+                            {
+                                float val = data[key];
+                                if (val > 1000000 || val < -1000000) return 0;
+                                return val;
+                            }
+                        }
                         return 0;
                     }
 
@@ -252,7 +260,7 @@ internal class Program
 
             Console.WriteLine(json);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(10000);
         }
     }
     private static void StartWebServer()
