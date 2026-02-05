@@ -36,10 +36,11 @@ jobs:
           cd sidecar/hw-omnisense.collector
           dotnet publish -c Release -r win-x64 --self-contained -o ../../build-output
 
+      # 3. PREPARAR BINÁRIOS (Corrigido)
       - name: Prepare Sidecar
         run: |
           mkdir tauri/omnisenseapp/src-tauri/binaries
-          copy build-output/hw-omnisense-collector.exe tauri/omnisenseapp/src-tauri/binaries/hw-omnisense-collector-x86_64-pc-windows-msvc.exe
+          copy build-output/hw-omnisense.collector.exe tauri/omnisenseapp/src-tauri/binaries/hw-omnisense-collector-x86_64-pc-windows-msvc.exe
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
