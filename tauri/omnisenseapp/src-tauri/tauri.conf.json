@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OmniSense",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.lucas.omnisenseapp",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -35,5 +35,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/lucas/hw-omni-sense/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIzMDcwMDAyQTZBNzk1NjkKUldScGxhZW1BZ0FIc3lwMEdHVSs2cnFXeHlJemQxd3NJai9ETWtid3pJcS9UemEyUk1TV05nYmEK"
+    }
   }
 }
