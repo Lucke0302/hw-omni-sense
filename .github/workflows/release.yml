@@ -42,6 +42,11 @@ jobs:
           mkdir tauri/omnisenseapp/src-tauri/binaries
           copy build-output/hw-omnisense.collector.exe tauri/omnisenseapp/src-tauri/binaries/hw-omnisense-collector-x86_64-pc-windows-msvc.exe
 
+      - name: Install Frontend Dependencies
+        run: |
+          cd tauri/omnisenseapp
+          npm install
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
