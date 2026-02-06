@@ -260,7 +260,7 @@ internal class Program
 
             Console.WriteLine(json);
 
-            Thread.Sleep(10000);
+            Thread.Sleep(1000);
         }
     }
     private static void StartWebServer()
