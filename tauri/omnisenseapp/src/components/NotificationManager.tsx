@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { sendNotification } from "@tauri-apps/plugin-notification";
 import { YStack, XStack, Text, Button, ScrollView, Popover, Input, Label } from "tamagui";
-import { Bell, AlertTriangle, Trash } from "@tamagui/lucide-icons";
 
 interface NotificationLog {
   id: number;
