@@ -66,14 +66,6 @@ public class DatabaseService
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
 
-        float delta = 0;
-        if (data.CpuCoreTemps.Count > 0)
-        {
-            float max = data.CpuCoreTemps.Max();
-            float avg = data.CpuCoreTemps.Average();
-            delta = max - avg;
-        }
-
         string insertCmd = @"
             INSERT INTO telemetry (timestamp, gpu_temp, gpu_load, cpu_temp, cpu_load, cpu_watts, cpu_delta, is_gaming)
             VALUES (@time, @gt, @gl, @ct, @cl, @cw, @cd, @ig)";
@@ -87,7 +79,8 @@ public class DatabaseService
         command.Parameters.AddWithValue("@cl", data.CpuLoad);
         command.Parameters.AddWithValue("@cw", data.CpuWatts);
         command.Parameters.AddWithValue("@ig", data.GpuLoad > 80 ? 1 : 0);
-        command.Parameters.AddWithValue("@cd", delta);
+        
+        command.Parameters.AddWithValue("@cd", data.CpuHotspotDelta);
 
         command.ExecuteNonQuery();
     }
@@ -136,26 +129,27 @@ public class DatabaseService
         command.ExecuteNonQuery();
     }
 
-    public (double OldAvg, double CurrentAvg) GetHealthComparison()
+    public float GetHistoricalBaselineDelta(bool isCpu)
     {
-        using var connection = new SqliteConnection(_connectionString);
-        connection.Open();
+        try
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            connection.Open();
 
-        // Média de 3 meses atrás
-        var cmdOld = new SqliteCommand(@"
-            SELECT AVG(gpu_temp) FROM telemetry 
-            WHERE is_gaming = 1 
-            AND timestamp BETWEEN date('now', '-90 days') AND date('now', '-83 days')", connection);
-        
-        // Média dos últimos 7 dias
-        var cmdNew = new SqliteCommand(@"
-            SELECT AVG(gpu_temp) FROM telemetry 
-            WHERE is_gaming = 1 
-            AND timestamp > date('now', '-7 days')", connection);
+            string column = isCpu ? "CpuHotspotDelta" : "GpuHotspotDelta"; 
+            
+            var command = connection.CreateCommand();
+            command.CommandText = $@"
+                SELECT AVG({column}) 
+                FROM (SELECT {column} FROM Telemetry WHERE {column} > 0 ORDER BY Timestamp ASC LIMIT 100)";
 
-        double oldVal = Convert.ToDouble(cmdOld.ExecuteScalar() is DBNull ? 0 : cmdOld.ExecuteScalar());
-        double newVal = Convert.ToDouble(cmdNew.ExecuteScalar() is DBNull ? 0 : cmdNew.ExecuteScalar());
-
-        return (oldVal, newVal);
+            var result = command.ExecuteScalar();
+            if (result != DBNull.Value && result != null)
+            {
+                return Convert.ToSingle(result);
+            }
+        }
+        catch { }
+        return 0f;
     }
 }

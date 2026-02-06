@@ -6,6 +6,8 @@ interface StatCardProps {
   load?: number | null;
   frequency?: number | null;
   voltage?: number | null;
+
+  healthStatus?: string;
   
   tempColor?: string;
   loadColor: string;
@@ -39,12 +41,18 @@ const CardFrame = styled(YStack, {
   pressStyle: { scale: 0.98, y: 0 }
 });
 
-export function StatCard({ title, temp, load, frequency, voltage, tempColor, loadColor, isCritical, onClick }: StatCardProps) {
+export function StatCard({ title, temp, load, frequency, voltage, tempColor, loadColor, isCritical, healthStatus, onClick }: StatCardProps) {
   
   const formatValue = (val: number | undefined | null, unit: string, decimals = 1) => {
     if (val === undefined || val === null || (val === 0 && unit !== "%")) return "--";
     
     return `${val.toFixed(decimals)} ${unit}`;
+  };
+
+  const getHealthIcon = (status?: string) => {
+    if (status === 'CRITICAL') return '🔴';
+    if (status === 'WARNING') return '🟡';
+    return '🟢'; 
   };
 
   return (
@@ -60,6 +68,9 @@ export function StatCard({ title, temp, load, frequency, voltage, tempColor, loa
           <Text fontWeight="bold" fontSize="$4" color="$gray11" fontFamily="$heading">
             {title}
           </Text>
+          {healthStatus && (
+              <Text fontSize="$3">{getHealthIcon(healthStatus)}</Text>
+          )}
           {isCritical && <Text fontSize="$4">🔥</Text>}
         </XStack>
         

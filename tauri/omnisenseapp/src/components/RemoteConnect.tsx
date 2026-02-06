@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { YStack, Text, Button, XStack, Input } from "tamagui";
 import QRCode from "react-qr-code";
-import { Command } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
 
 export function RemoteConnect({ onClose }: { onClose: () => void }) {
   const [ip, setIp] = useState("Carregando IP...");
@@ -10,19 +10,18 @@ export function RemoteConnect({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const fetchIp = async () => {
       try {
-        const cmd = Command.create("cmd", ["/c", "ipconfig"]);
-        const output = await cmd.execute();
-        const text = output.stdout;
+        const foundIp = await invoke("get_local_ip") as string;
         
-        const match = text.match(/IPv4 Address[ .]*: (192\.168\.\d+\.\d+)/);
+        console.log("IP do Rust:", foundIp);
         
-        if (match && match[1]) {
-          setIp(match[1]);
-          setRemoteUrl(`http://${match[1]}:9090`); 
+        if (foundIp && foundIp !== "127.0.0.1") {
+          setIp(foundIp);
+          setRemoteUrl(`http://${foundIp}:9090`); 
         } else {
-          setIp("Não encontrado. Digite manualmente.");
+          setIp("Não detectado. Digite abaixo:");
         }
       } catch (e) {
+        console.error("Erro Rust:", e);
         setIp("Erro ao buscar IP");
       }
     };
@@ -38,11 +37,12 @@ export function RemoteConnect({ onClose }: { onClose: () => void }) {
       ai="center" 
       gap="$4"
       borderRadius="$6"
+      zIndex={1000}
     >
       <Text color="$color" fontFamily="$heading" fontSize="$5">Conexão Remota 📱</Text>
       
       <YStack p="$4" bc="white" borderRadius="$4">
-        {remoteUrl ? <QRCode value={remoteUrl} size={200} /> : <Text>Gerando...</Text>}
+        {remoteUrl ? <QRCode value={remoteUrl} size={200} /> : <Text color="black">...</Text>}
       </YStack>
 
       <Text color="$gray11" textAlign="center">
@@ -56,7 +56,7 @@ export function RemoteConnect({ onClose }: { onClose: () => void }) {
         <Input 
           value={ip} 
           onChangeText={(t) => { setIp(t); setRemoteUrl(`http://${t}:9090`); }} 
-          w={150} 
+          w={200} 
           bc="$background" 
           color="$color"
         />

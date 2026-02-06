@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
@@ -18,6 +20,14 @@
           "cmd": "",
           "args": true,
           "sidecar": true
+        },
+        {
+          "name": "cmd",
+          "cmd": "cmd",
+          "args": [
+            "/c",
+            "ipconfig"
+          ]
         }
       ]
     },
@@ -31,6 +41,7 @@
           "sidecar": true
         }
       ]
-    }
+    },
+    "notification:default"
   ]
 }

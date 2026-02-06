@@ -3,11 +3,12 @@ import { Command, Child } from "@tauri-apps/plugin-shell";
 import { open } from "@tauri-apps/plugin-dialog";
 import { YStack, Text, H2, XStack, Button } from "tamagui";
 import { StatCard } from "./components/StatCard";
-import { getLoadColor, getTempColor, isCriticalState } from "./utils/status";
+import { getLoadColor, getTempColor } from "./utils/status";
 import { DetailPanel } from "./components/DetailPanel";
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { RemoteConnect } from "./components/RemoteConnect";
+import { NotificationManager } from "./components/NotificationManager";
 
 interface TelemetryData {
   CpuTemp: number; 
@@ -29,7 +30,21 @@ interface TelemetryData {
   RamMhz: number; 
   RamTemp: number;
   RamVolt: number; 
+
+  CpuHealthStatus?: string;
+  CpuHealthMsg?: string;
+  GpuHealthStatus?: string;
+  GpuHealthMsg?: string;
 }
+
+const toggleStress = async (type: 'cpu' | 'ram', action: 'start' | 'stop') => {
+  try {
+    await fetch(`http://localhost:9090/stress/${type}/${action}`, { method: 'POST' });
+    console.log(`Stress ${type} ${action} enviado.`);
+  } catch (e) {
+    console.error("Erro ao comunicar com backend:", e);
+  }
+};
 
 let activeSidecar: Child | null = null;
 
@@ -39,6 +54,21 @@ function App() {
   const [showRemote, setShowRemote] = useState(false);
 
   const [selectedView, setSelectedView] = useState<'CPU' | 'GPU' | 'RAM' | null>(null);
+
+  const [cpuStress, setCpuStress] = useState(false);
+  const [ramStress, setRamStress] = useState(false);
+
+  const handleCpuClick = () => {
+      const newState = !cpuStress;
+      setCpuStress(newState);
+      toggleStress('cpu', newState ? 'start' : 'stop');
+  };
+
+  const handleRamClick = () => {
+      const newState = !ramStress;
+      setRamStress(newState);
+      toggleStress('ram', newState ? 'start' : 'stop');
+  };
 
   const spawnSidecar = async (customPath?: string, cleanDb = false) => {
     if (activeSidecar) {
@@ -154,6 +184,11 @@ return (
           <YStack ai="center" mb="$2">
             <H2 color="$color" fontFamily="$heading">OmniSense</H2>
             <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
+            <XStack ai="center" jc="space-between" mb="$2">              
+              <NotificationManager 
+                cpuTemp={data?.CpuTemp || 0} 
+              />
+            </XStack>
           </YStack>
 
           <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
@@ -166,7 +201,8 @@ return (
               voltage={data?.CpuVolt}
               tempColor={getTempColor(data?.CpuTemp)}
               loadColor={getLoadColor(data?.CpuLoad)}
-              isCritical={isCriticalState(data?.CpuTemp)}
+              healthStatus={data?.CpuHealthStatus} 
+              isCritical={data?.CpuHealthStatus === 'CRITICAL'}
               onClick={() => setSelectedView('CPU')}
             />
 
@@ -177,8 +213,9 @@ return (
               frequency={data?.GpuMhz} 
               voltage={data?.GpuVolt}
               tempColor={getTempColor(data?.GpuTemp)}
-              loadColor={getLoadColor(data?.GpuLoad)}
-              isCritical={isCriticalState(data?.GpuTemp)}
+              loadColor={getLoadColor(data?.GpuLoad)}              
+              healthStatus={data?.GpuHealthStatus}
+              isCritical={data?.GpuHealthStatus === 'CRITICAL'}
               onClick={() => setSelectedView('GPU')}
             />
 
@@ -199,6 +236,26 @@ return (
             <Button size="$3" onPress={() => setShowRemote(true)}>📱 Remote</Button>
             <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
           </XStack>
+
+          <XStack gap="$3" mt="$4" jc="center">
+                <Button 
+                    size="$3" 
+                    theme={cpuStress ? "red" : "gray"} 
+                    onPress={handleCpuClick}
+                    icon={cpuStress ? <Text>🔥</Text> : undefined}
+                >
+                    {cpuStress ? "Parar CPU" : "Estressar CPU"}
+                </Button>
+
+                <Button 
+                    size="$3" 
+                    theme={ramStress ? "red" : "gray"} 
+                    onPress={handleRamClick}
+                    icon={ramStress ? <Text>🌊</Text> : undefined}
+                >
+                    {ramStress ? "Parar RAM" : "Estressar RAM"}
+                </Button>
+            </XStack>
         </>
       )}
     </YStack>

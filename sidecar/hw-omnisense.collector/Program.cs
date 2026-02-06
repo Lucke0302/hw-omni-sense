@@ -31,6 +31,8 @@ internal class Program
     
     private static string _latestJsonData = "{}";
 
+    private static StressTestService _stressService = new StressTestService();
+
     private static void Main(string[] args)
     {
         var current = Process.GetCurrentProcess();
@@ -58,6 +60,11 @@ internal class Program
 
         using MsiMonitor msi = new MsiMonitor();
         DatabaseService db = new DatabaseService();
+
+        ThermalHealthService healthDoc = new ThermalHealthService();
+
+        float cpuBaselineDelta = db.GetHistoricalBaselineDelta(true);
+        Console.WriteLine($"[INFO] Baseline Histórica CPU Delta: {cpuBaselineDelta:F1}°C");
 
         Console.WriteLine($"[DB] Caminho do Banco: {db.DatabasePath}");
 
@@ -220,6 +227,24 @@ internal class Program
                         telemetry.CpuCoreTemps.Add(telemetry.CpuTemp);
                     }
 
+                    // Delta CPU
+                    float cpuMaxCore = telemetry.CpuCoreTemps.Count > 0 ? telemetry.CpuCoreTemps.Max() : telemetry.CpuTemp;
+                    float cpuAvgCore = telemetry.CpuCoreTemps.Count > 0 ? telemetry.CpuCoreTemps.Average() : telemetry.CpuTemp;
+                    float currentCpuDelta = cpuMaxCore - cpuAvgCore;
+                    telemetry.CpuHotspotDelta = currentCpuDelta;
+
+                    // Delta GPU
+                    float gpuHotspot = GetValue(new[] { "GPU hotspot", "GPU temperature" });
+                    float currentGpuDelta = (gpuHotspot > telemetry.GpuTemp) ? gpuHotspot - telemetry.GpuTemp : 0;
+
+                    var cpuDiag = healthDoc.Analyze("CPU", telemetry.CpuTemp, currentCpuDelta, cpuBaselineDelta);
+                    telemetry.CpuHealthStatus = cpuDiag.Status;
+                    telemetry.CpuHealthMsg = cpuDiag.Message;
+
+                    var gpuDiag = healthDoc.Analyze("GPU", telemetry.GpuTemp, currentGpuDelta, 0); 
+                    telemetry.GpuHealthStatus = gpuDiag.Status;
+                    telemetry.GpuHealthMsg = gpuDiag.Message;
+
                     telemetry.IsSimulation = false;
                 }
                 catch
@@ -268,29 +293,59 @@ internal class Program
         try
         {
             HttpListener listener = new HttpListener();
-            listener.Prefixes.Add("http://*:9090/"); 
+            listener.Prefixes.Add("http://localhost:9090/");
             listener.Start();
-            Console.WriteLine("[SERVER] Servidor Remoto rodando na porta 9090");
+            Console.WriteLine("[SERVER] API de Controle rodando na porta 9090");
 
             while (true)
             {
                 var context = listener.GetContext();
+                var request = context.Request;
                 var response = context.Response;
 
                 response.Headers.Add("Access-Control-Allow-Origin", "*");
-                response.Headers.Add("Content-Type", "application/json");
+                response.Headers.Add("Access-Control-Allow-Methods", "GET, POST");
 
-                byte[] buffer = Encoding.UTF8.GetBytes(_latestJsonData);
-                
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
+                string path = request.Url?.AbsolutePath.ToLower() ?? "/";
+
+                if (path == "/data")
+                {
+                    response.ContentType = "application/json";
+                    byte[] buffer = Encoding.UTF8.GetBytes(_latestJsonData);
+                    response.ContentLength64 = buffer.Length;
+                    response.OutputStream.Write(buffer, 0, buffer.Length);
+                }
+                else if (path.StartsWith("/stress/"))
+                {
+                    string[] parts = path.Split('/');
+                    
+                    if (parts.Length >= 4)
+                    {
+                        string type = parts[2];
+                        string action = parts[3];
+
+                        if (type == "cpu")
+                        {
+                            if (action == "start") _stressService.StartCpuStress();
+                            else _stressService.StopCpuStress();
+                        }
+                        else if (type == "ram")
+                        {
+                            if (action == "start") _stressService.StartRamStress();
+                            else _stressService.StopRamStress();
+                        }
+                    }
+                    
+                    byte[] ack = Encoding.UTF8.GetBytes("{\"status\": \"received\"}");
+                    response.OutputStream.Write(ack, 0, ack.Length);
+                }
+
                 response.OutputStream.Close();
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[SERVER ERROR]: {ex.Message}");
-            Console.WriteLine("Tente rodar o app como Administrador para liberar a porta 9090.");
         }
     }
 }

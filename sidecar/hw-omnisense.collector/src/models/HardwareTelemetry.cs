@@ -25,6 +25,12 @@ public class HardwareTelemetry
     public float RamMhz { get; set; } 
     public float RamVolt { get; set; }
     public float RamTemp { get; set; } 
+
+    public string CpuHealthStatus { get; set; } = "OK";
+    public string CpuHealthMsg { get; set; } = "";
+    
+    public string GpuHealthStatus { get; set; } = "OK";
+    public string GpuHealthMsg { get; set; } = "";
     
 
     public bool IsSimulation { get; set; } = false;

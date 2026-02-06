@@ -50,6 +50,19 @@ export function DetailPanel({ type, onBack, data }: DetailPanelProps) {
     return max - avg;
   }, [cores, type]);
 
+
+  const healthStatus = type === 'CPU' ? data?.CpuHealthStatus : type === 'GPU' ? data?.GpuHealthStatus : 'OK';
+  const healthMsg = type === 'CPU' ? data?.CpuHealthMsg : type === 'GPU' ? data?.GpuHealthMsg : '';
+  
+  const getHealthInfo = (status: string) => {
+      switch(status) {
+          case 'CRITICAL': return { color: '$red10', icon: '🔴', title: 'Crítico' };
+          case 'WARNING':  return { color: '$yellow10', icon: '🟡', title: 'Atenção' };
+          default:         return { color: '$green10', icon: '🟢', title: 'Saudável' };
+      }
+  };
+  const healthInfo = getHealthInfo(healthStatus || 'OK');
+  
   return (
     <YStack 
       f={1} 
@@ -63,6 +76,31 @@ export function DetailPanel({ type, onBack, data }: DetailPanelProps) {
       borderWidth={1}
       borderColor="$borderColor"
     >
+
+    {(type === 'CPU' || type === 'GPU') && healthMsg && (
+          <YStack 
+            bc="$backgroundTransparent" 
+            p="$3" 
+            borderRadius="$4" 
+            borderColor={healthInfo.color} 
+            borderWidth={1}
+          >
+            <XStack gap="$3" ai="center">
+                <Text fontSize={24}>{healthInfo.icon}</Text>
+                <YStack f={1}>
+                    <Text color={healthInfo.color} fontWeight="bold" fontSize="$4">
+                        Status: {healthInfo.title}
+                    </Text>
+                    <Text color="$gray11" fontSize="$3">
+                        {healthMsg}
+                    </Text>
+                </YStack>
+            </XStack>
+          </YStack>
+      )}
+
+      <Separator borderColor="$gray8" />
+
       <XStack jc="space-between" ai="center">
         <YStack>
           <H2 fontFamily="$heading" color="$color">Detalhes: {type}</H2>

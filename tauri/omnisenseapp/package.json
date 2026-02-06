@@ -1,7 +1,7 @@
 {
   "name": "omnisenseapp",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,9 +14,11 @@
     "@tamagui/animations-css": "^2.0.0-rc.2",
     "@tamagui/animations-react-native": "^2.0.0-rc.2",
     "@tamagui/config": "^2.0.0-rc.0",
+    "@tamagui/lucide-icons": "^2.0.0-rc.5",
     "@tamagui/vite-plugin": "^2.0.0-rc.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-notification": "^2.3.3",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
