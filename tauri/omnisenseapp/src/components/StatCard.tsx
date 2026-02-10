@@ -1,5 +1,4 @@
 import { YStack, XStack, Text, Separator, styled, Button } from "tamagui"; 
-// ^ Adicionei 'Button' no import
 
 interface StatCardProps {
   title: string;
