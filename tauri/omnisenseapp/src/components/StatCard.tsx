@@ -1,4 +1,5 @@
-import { YStack, XStack, Text, Separator, styled } from "tamagui"; 
+import { YStack, XStack, Text, Separator, styled, Button } from "tamagui"; 
+// ^ Adicionei 'Button' no import
 
 interface StatCardProps {
   title: string;
@@ -13,6 +14,9 @@ interface StatCardProps {
   loadColor: string;
   isCritical?: boolean;
   onClick?: () => void;
+
+  isStressing?: boolean;
+  onStressToggle?: () => void;
 }
 
 const CardFrame = styled(YStack, {
@@ -41,70 +45,97 @@ const CardFrame = styled(YStack, {
   pressStyle: { scale: 0.98, y: 0 }
 });
 
-export function StatCard({ title, temp, load, frequency, voltage, tempColor, loadColor, isCritical, healthStatus, onClick }: StatCardProps) {
-  
-  const formatValue = (val: number | undefined | null, unit: string, decimals = 1) => {
-    if (val === undefined || val === null || (val === 0 && unit !== "%")) return "--";
-    
-    return `${val.toFixed(decimals)} ${unit}`;
-  };
+export function StatCard({
+  title, temp, load, frequency, voltage,
+  healthStatus, tempColor, loadColor, isCritical, onClick,
+  isStressing, onStressToggle
+}: StatCardProps) {
 
-  const getHealthIcon = (status?: string) => {
-    if (status === 'CRITICAL') return '🔴';
-    if (status === 'WARNING') return '🟡';
-    return '🟢'; 
-  };
+  const formatValue = (val: number | null | undefined, unit: string, digits = 0) => 
+    val !== undefined && val !== null ? `${val.toFixed(digits)}${unit}` : "--";
 
   return (
     <CardFrame 
+      onPress={onClick} 
       className="smooth-transition glass-panel"
-      borderWidth={isCritical ? 2 : 1}
       borderColor={isCritical ? "$red10" : "$borderColor"}
-      scale={isCritical ? 1.05 : 1}
-      onPress={onClick}
+      backgroundColor="$cardBg"
     >
-      <YStack gap="$2"> 
+        {/* --- CABEÇALHO --- */}
         <XStack jc="space-between" ai="center" mb="$2">
-          <Text fontWeight="bold" fontSize="$4" color="$gray11" fontFamily="$heading">
-            {title}
-          </Text>
-          {healthStatus && (
-              <Text fontSize="$3">{getHealthIcon(healthStatus)}</Text>
-          )}
-          {isCritical && <Text fontSize="$4">🔥</Text>}
+          <XStack ai="center" gap="$2">
+            <Text fontWeight="bold" fontSize="$4" color="$gray11" fontFamily="$heading">
+              {title}
+            </Text>
+            
+            {isStressing && (
+              <YStack 
+                bg="$red4" px="$2" py="$1" borderRadius="$4" 
+                enterStyle={{ opacity: 0, scale: 0.5 }}
+              >
+                 <Text fontSize="$2" fontWeight="bold" color="$red11">🔥 TESTE</Text>
+              </YStack>
+            )}
+          </XStack>
+
+          <XStack>
+             {isCritical && <Text fontSize="$4">⚠️</Text>}
+          </XStack>
         </XStack>
         
-        <Separator borderColor="$gray6" />
+        <Separator borderColor="$gray6" mb="$3" />
         
-        <XStack jc="space-between" ai="center">
-          <Text color="$gray10" fontSize="$3">Temp:</Text>
-          <Text fontFamily="$tech" fontSize="$4" color={tempColor || "$gray11"} fontWeight="700">
-            {formatValue(temp, "°C")}
-          </Text>
-        </XStack>
-
-        <XStack jc="space-between" ai="center">
-          <Text color="$gray10" fontSize="$3">Uso:</Text>
-          <Text fontFamily="$tech" fontSize="$4" color={loadColor} fontWeight="700">
-            {formatValue(load, "%", 1)}
-          </Text>
-        </XStack>
-
-        <XStack jc="space-between" ai="center">
-            <Text color="$gray10" fontSize="$3">Clock:</Text>
-            <Text fontFamily="$tech" fontSize="$3" color="$gray11">
-            {formatValue(frequency, "MHz", 0)}
+        {/* --- DADOS --- */}
+        <YStack gap="$2">
+            <XStack jc="space-between" ai="center">
+            <Text color="$gray10" fontSize="$3">Temp:</Text>
+            <Text fontFamily="$tech" fontSize="$4" color={tempColor || "$gray11"} fontWeight="700">
+                {formatValue(temp, "°C")}
             </Text>
-        </XStack>
+            </XStack>
 
-        <XStack jc="space-between" ai="center">
-            <Text color="$gray10" fontSize="$3">Volt:</Text>
-            <Text fontFamily="$tech" fontSize="$3" color="$yellow10">
-            {formatValue(voltage, "V", 2)}
+            <XStack jc="space-between" ai="center">
+            <Text color="$gray10" fontSize="$3">Uso:</Text>
+            <Text fontFamily="$tech" fontSize="$4" color={loadColor} fontWeight="700">
+                {formatValue(load, "%", 0)}
             </Text>
-        </XStack>
+            </XStack>
 
-      </YStack>
+            <XStack jc="space-between" ai="center">
+                <Text color="$gray10" fontSize="$3">Clock:</Text>
+                <Text fontFamily="$tech" fontSize="$3" color="$gray11">
+                {formatValue(frequency, " MHz", 0)}
+                </Text>
+            </XStack>
+
+            {/* Voltage */}
+            {voltage !== undefined && voltage !== null && (
+                <XStack jc="space-between" ai="center">
+                    <Text color="$gray10" fontSize="$3">Volt:</Text>
+                    <Text fontFamily="$tech" fontSize="$3" color="$gray11">
+                    {formatValue(voltage, " V", 2)}
+                    </Text>
+                </XStack>
+            )}
+        </YStack>
+
+        {onStressToggle && (
+            <Button 
+                size="$2" 
+                mt="$3" 
+                theme={isStressing ? "red" : "gray"} 
+                onPress={(e) => {
+                    e.stopPropagation(); 
+                    onStressToggle();
+                }}
+                icon={isStressing ? undefined : <Text>⚡</Text>}
+                chromeless={!isStressing} 
+                borderWidth={1}
+            >
+                {isStressing ? "Parar Teste ⏹️" : "Estressar"}
+            </Button>
+        )}
+
     </CardFrame>
   );
 }

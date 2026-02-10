@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     tamaguiPlugin({
-      config: './tamagui.config.ts',
+      config: './src/tamagui.config.ts',
       components: ['tamagui'],
     }),
   ],

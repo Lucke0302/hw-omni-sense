@@ -9,6 +9,8 @@ import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { RemoteConnect } from "./components/RemoteConnect";
 import { NotificationManager } from "./components/NotificationManager";
+import { SideMenu } from "./components/SideMenu";
+import { Menu } from "lucide-react";
 
 interface TelemetryData {
   CpuTemp: number; 
@@ -57,6 +59,36 @@ function App() {
 
   const [cpuStress, setCpuStress] = useState(false);
   const [ramStress, setRamStress] = useState(false);
+
+  const [isMenuOpen, setMenuOpen] = useState(false);
+
+  const handleConfig = async () => {
+    try {
+      const file = await open({
+        multiple: false,
+        filters: [{ name: 'Executável', extensions: ['exe'] }]
+      });
+      if (file) {
+        const filePath = Array.isArray(file) ? file[0] : file;
+        if (filePath) {
+            localStorage.setItem("afterburner_path", filePath);
+            spawnSidecar(filePath);
+        }
+      }
+    } catch (e) { console.error(e); }
+    setMenuOpen(false); 
+  };
+
+  const handleClean = () => {
+    const savedPath = localStorage.getItem("afterburner_path") || undefined;
+    spawnSidecar(savedPath, true);
+    setMenuOpen(false);
+  };
+
+  const handleOptimize = () => {
+      alert("Otimizador de perfis MSI chegando em breve!");
+      setMenuOpen(false);
+  }
 
   const handleCpuClick = () => {
       const newState = !cpuStress;
@@ -126,27 +158,6 @@ function App() {
     };
   }, []);
 
-  const handleConfig = async () => {
-    try {
-      const file = await open({
-        multiple: false,
-        filters: [{ name: 'Executável', extensions: ['exe'] }]
-      });
-      if (file) {
-        const filePath = Array.isArray(file) ? file[0] : file;
-        if (filePath) {
-            localStorage.setItem("afterburner_path", filePath);
-            spawnSidecar(filePath);
-        }
-      }
-    } catch (e) { console.error(e); }
-  };
-
-  const handleClean = () => {
-    const savedPath = localStorage.getItem("afterburner_path") || undefined;
-    spawnSidecar(savedPath, true);
-  };
-
   useEffect(() => {
     const checkForUpdates = async () => {
       try {
@@ -171,93 +182,71 @@ function App() {
     : 0;
 
 return (
-    <YStack f={1} p="$4" gap="$4">
+    <YStack f={1} >
       <div className="cyber-grid-bg" />
       <div className="vignette" />
+
+      <SideMenu 
+        isOpen={isMenuOpen}
+        onClose={() => setMenuOpen(false)}
+        onConfig={handleConfig}
+        onRemote={() => { setShowRemote(true); setMenuOpen(false); }}
+        onClean={handleClean}
+        onOptimize={handleOptimize}
+      />
       
-      {showRemote ? (
-        <RemoteConnect onClose={() => setShowRemote(false)} />
-      ) : selectedView ? (
-        <DetailPanel type={selectedView} data={data} onBack={() => setSelectedView(null)} />
-      ) : (
-        <>
-          <YStack ai="center" mb="$2">
-            <H2 color="$color" fontFamily="$heading">OmniSense</H2>
-            <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
-            <XStack ai="center" jc="space-between" mb="$2">              
-              <NotificationManager 
-                cpuTemp={data?.CpuTemp || 0} 
-              />
-            </XStack>
-          </YStack>
+      <YStack f={1} p="$4" gap="$4">
+          
+          {showRemote ? (
+            <RemoteConnect onClose={() => setShowRemote(false)} />
+          ) : selectedView ? (
+            <DetailPanel type={selectedView} data={data} onBack={() => setSelectedView(null)} />
+          ) : (
+            <>
+              {/* Header */}
+              <XStack ai="center" mb="$2" jc="space-between">
+                <XStack ai="center" gap="$3">
+                    <Button 
+                      size="$3" 
+                      circular 
+                      icon={Menu} 
+                      onPress={() => setMenuOpen(true)} 
+                    />
+                    <YStack>
+                        <H2 color="$color" fontFamily="$heading" lineHeight="$1">OmniSense</H2>
+                        <Text color="$gray10" fontSize="$2" fontFamily="$body">{status}</Text>
+                    </YStack>
+                </XStack>
+                <NotificationManager cpuTemp={data?.CpuTemp || 0} />
+              </XStack>
 
-          <XStack flexWrap="wrap" gap="$4" jc="center" width="100%">
-            
-            <StatCard 
-              title="CPU" 
-              temp={data?.CpuTemp} 
-              load={data?.CpuLoad}
-              frequency={data?.CpuMhz} 
-              voltage={data?.CpuVolt}
-              tempColor={getTempColor(data?.CpuTemp)}
-              loadColor={getLoadColor(data?.CpuLoad)}
-              healthStatus={data?.CpuHealthStatus} 
-              isCritical={data?.CpuHealthStatus === 'CRITICAL'}
-              onClick={() => setSelectedView('CPU')}
-            />
-
-            <StatCard 
-              title="GPU" 
-              temp={data?.GpuTemp} 
-              load={data?.GpuLoad} 
-              frequency={data?.GpuMhz} 
-              voltage={data?.GpuVolt}
-              tempColor={getTempColor(data?.GpuTemp)}
-              loadColor={getLoadColor(data?.GpuLoad)}              
-              healthStatus={data?.GpuHealthStatus}
-              isCritical={data?.GpuHealthStatus === 'CRITICAL'}
-              onClick={() => setSelectedView('GPU')}
-            />
-
-            <StatCard 
-              title="RAM" 
-              temp={data && data.RamTemp > 0 ? data.RamTemp : undefined} 
-              load={ramPercentage > 0 ? ramPercentage : undefined}
-              frequency={data?.RamMhz}
-              voltage={data?.RamVolt} 
-              loadColor={getLoadColor(ramPercentage)} 
-              onClick={() => setSelectedView('RAM')}
-            />
-
-          </XStack>
-
-          <XStack gap="$3" mt="auto" jc="center">
-            <Button size="$3" onPress={handleConfig}>⚙️ Config</Button>
-            <Button size="$3" onPress={() => setShowRemote(true)}>📱 Remote</Button>
-            <Button size="$3" theme="red" onPress={handleClean}>🧹 Limpar</Button>
-          </XStack>
-
-          <XStack gap="$3" mt="$4" jc="center">
-                <Button 
-                    size="$3" 
-                    theme={cpuStress ? "red" : "gray"} 
-                    onPress={handleCpuClick}
-                    icon={cpuStress ? <Text>🔥</Text> : undefined}
-                >
-                    {cpuStress ? "Parar CPU" : "Estressar CPU"}
-                </Button>
-
-                <Button 
-                    size="$3" 
-                    theme={ramStress ? "red" : "gray"} 
-                    onPress={handleRamClick}
-                    icon={ramStress ? <Text>🌊</Text> : undefined}
-                >
-                    {ramStress ? "Parar RAM" : "Estressar RAM"}
-                </Button>
-            </XStack>
-        </>
-      )}
+              {/* Cards */}
+              <XStack flexWrap="wrap" gap="$4" jc="center" width="100%" mt="$4">
+                <StatCard 
+                  title="CPU" temp={data?.CpuTemp} load={data?.CpuLoad} frequency={data?.CpuMhz} voltage={data?.CpuVolt}
+                  tempColor={getTempColor(data?.CpuTemp)} loadColor={getLoadColor(data?.CpuLoad)}
+                  healthStatus={data?.CpuHealthStatus} isCritical={data?.CpuHealthStatus === 'CRITICAL'}
+                  onClick={() => setSelectedView('CPU')}
+                  isStressing={cpuStress}
+                  onStressToggle={handleCpuClick}
+                />
+                <StatCard 
+                  title="GPU" temp={data?.GpuTemp} load={data?.GpuLoad} frequency={data?.GpuMhz} voltage={data?.GpuVolt}
+                  tempColor={getTempColor(data?.GpuTemp)} loadColor={getLoadColor(data?.GpuLoad)}              
+                  healthStatus={data?.GpuHealthStatus} isCritical={data?.GpuHealthStatus === 'CRITICAL'}
+                  onClick={() => setSelectedView('GPU')}
+                />
+                <StatCard 
+                  title="RAM" temp={data && data.RamTemp > 0 ? data.RamTemp : undefined} 
+                  load={ramPercentage > 0 ? ramPercentage : undefined} frequency={data?.RamMhz} voltage={data?.RamVolt} 
+                  loadColor={getLoadColor(ramPercentage)} onClick={() => setSelectedView('RAM')}
+                  isStressing={ramStress}
+                  onStressToggle={handleRamClick}
+                />
+              </XStack>
+            </>
+          )}
+      </YStack>
     </YStack>
   );
 }

@@ -22,8 +22,8 @@ const techFont = createFont({
 // --- ANIMAÇÕES ---
 const animations = createAnimations({
   bouncy: 'cubic-bezier(0.175, 0.885, 0.32, 1.275) 500ms',
-  smooth: 'all 200ms ease-in-out', 
-  quick: 'all 100ms ease-in',
+  quick: 'ease-in 150ms',
+  smooth: 'ease-in-out 200ms',
 })
 
 // --- CONFIG ---
@@ -34,7 +34,7 @@ const config = createTamagui({
     heading: interFont,
     tech: techFont,
   },
-  animations: animations as any,
+  animations,
 })
 
 export { config }
